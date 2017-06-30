@@ -104,6 +104,19 @@ def updateKeys(correo,nombre):
         writePrivateFile.write('d:' + str(keys[1]) + '\nn:' + str(keys[2]))
     print('Listo!')
 
+def exportar(correo):
+    query = "SELECT * FROM usuarios WHERE correo='%s'" % correo
+    result = run_query(query)
+    print 'Escribiendo archivo ' + correo + 'Exported.key en la carpeta exports'
+    with open('exports/' + correo + 'Exported.key', 'w') as writePrivateFile:
+        writePrivateFile.write('e:' + str(result[0][3]) +'\nn:' + str(result[0][5]) + '\ncorreo:' + str(result[0][2]) + '\nvigencia:' + str(result[0][4]))
+    print('Listo!')
+
+def menu():
+    print('Que deseas hacer a continuación?')
+    print('[Exportar tu llave publica]->Expotar')
+    print('[Salir]->Salir')
+
 correo = raw_input("Escribe tu correo>>  ").lower()
 query = "SELECT nombre,expirationDate FROM usuarios WHERE correo='%s'" % correo
 result = run_query(query)
@@ -115,3 +128,13 @@ elif(result[0][1] < datetime.now().date()):
     updateKeys(correo,result[0][0])
 else:
     print('Bienvenido ' + str(result[0][0]).lower().title())
+    while True:
+        menu()
+        opt = raw_input('>>').lower()
+        if opt == 'salir':
+            break
+        elif opt == 'exportar':
+            print('Exportar llave publica')
+            exportar(correo)
+        else:
+            print('\nSelecciona una opcion valida')
