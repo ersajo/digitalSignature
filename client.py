@@ -1,4 +1,10 @@
 import random
+import MySQLdb
+
+DB_HOST = 'localhost'
+DB_USER = 'userRoot'
+DB_PASS = 'root'
+DB_NAME = 'Firmas'
 
 def esPrimo(num):
     for i in range(2,num):
@@ -42,17 +48,16 @@ def eucExt(a,b):
   i = i+1
  return (r[i-1], s[i-1], t[i-1])
 
-p = genPrimoRandom(100000)
-q = genPrimoRandom(100000)
-while q == p:
+def genRSAKeys():
+    p = genPrimoRandom(100000)
     q = genPrimoRandom(100000)
-n = p * q
-phi = (p-1)*(q-1)
-e = random.randrange(phi)
-while not(esCoprimo(e,phi)):
+    while q == p:
+        q = genPrimoRandom(100000)
+    n = p * q
+    phi = (p-1)*(q-1)
     e = random.randrange(phi)
-d = eucExt(e, phi)[1]
-print d
-if d < 0:
-    d = d + phi
-print d
+    while not(esCoprimo(e,phi)):
+        e = random.randrange(phi)
+    d = eucExt(e, phi)[1]
+    if d < 0:
+        d = d + phi
