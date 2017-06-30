@@ -3,6 +3,7 @@
 
 import random
 import MySQLdb
+from datetime import datetime,timedelta
 
 DB_HOST = 'localhost'
 DB_USER = 'userRoot'
@@ -79,12 +80,38 @@ def genRSAKeys():
     e = random.randrange(phi)
     while not(esCoprimo(e,phi)):
         e = random.randrange(phi)
-    query = "UPDATE usuarios SET e='%s' ,n='%s' WHERE correo='sanchezjoserick@gmail.com'" % (e, n)
-    run_query(query)
     d = eucExt(e, phi)[1]
     if d < 0:
         d = d + phi
-    query = "SELECT nombre FROM usuarios WHERE correo='sanchezjoserick@gmail.com'"
-    result = run_query(query)
-    with open('keys/' + result[0][0] + '.key', 'w') as writePrivateFile:
-        writePrivateFile.write('d:' + str(d) + '\nn:' + str(n))
+    return (e,d,n)
+
+def registrarUsuario(correo):
+    nombre = raw_input("Escriba su nombre>>")
+    fecha = datetime.now().date() + timedelta(days=7)
+    keys = genRSAKeys()
+    query = "INSERT INTO usuarios (nombre, correo, e, expirationDate, n) VALUES ('%s', '%s', '%i', '%s', '%i')" % (nombre, correo, keys[0], fecha, keys[2])
+    run_query(query)
+    with open('keys/' + nombre + '.key', 'w') as writePrivateFile:
+        writePrivateFile.write('d:' + str(keys[1]) + '\nn:' + str(keys[2]))
+    print('Listo!')
+
+def updateKeys(correo,nombre):
+    keys = genRSAKeys()
+    fecha = datetime.now().date() + timedelta(days=7)
+    query = "UPDATE usuarios SET e='%i', expirationDate='%s', n='%i' WHERE correo='%s'" % (keys[0], fecha, keys[2], correo)
+    run_query(query)
+    with open('keys/' + nombre + '.key', 'w') as writePrivateFile:
+        writePrivateFile.write('d:' + str(keys[1]) + '\nn:' + str(keys[2]))
+    print('Listo!')
+
+correo = raw_input("Escribe tu correo>>  ").lower()
+query = "SELECT nombre,expirationDate FROM usuarios WHERE correo='%s'" % correo
+result = run_query(query)
+if len(result) == 0:
+    print('Se ha detectado un nuevo usuario, favor de registrarse...')
+    registrarUsuario(correo)
+elif(result[0][1] < datetime.now().date()):
+    print('Llaves caducadas. Se actualizaran las llaves')
+    updateKeys(correo,result[0][0])
+else:
+    print('Bienvenido')
