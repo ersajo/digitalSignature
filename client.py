@@ -4,7 +4,10 @@
 import random
 import MySQLdb
 from datetime import datetime,timedelta
+import socket
+import sys
 
+ip='127.0.0.1'
 DB_HOST = 'localhost'
 DB_USER = 'userRoot'
 DB_PASS = 'root'
@@ -115,9 +118,10 @@ def exportar(correo):
 def menu():
     print('Que deseas hacer a continuación?')
     print('[Exportar tu llave publica]->Expotar')
+    print('[Conectarse con otro usuario]->Conectar')
     print('[Salir]->Salir')
 
-correo = raw_input("Escribe tu correo>>  ").lower()
+correo = raw_input("Escribe tu correo>>").lower()
 query = "SELECT nombre,expirationDate FROM usuarios WHERE correo='%s'" % correo
 result = run_query(query)
 if len(result) == 0:
@@ -136,5 +140,20 @@ else:
         elif opt == 'exportar':
             print('Exportar llave publica')
             exportar(correo)
+        elif opt == 'conectar':
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect((ip, 7500))
+            try:
+                g = int(client.recv(1))
+                p = int(client.recv(4))
+                a = random.randint(p/4, p-1)
+                ka = pow(g,a,p)
+                client.sendall(str(ka))
+                kb = int(client.recv(4))
+                DHKey = pow(kb,a,p)
+                print DHKey
+            finally:
+                print >>sys.stderr, 'cerrando conexión'
+                client.close()
         else:
             print('\nSelecciona una opcion valida')
