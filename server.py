@@ -4,6 +4,8 @@
 import random
 import MySQLdb
 from datetime import datetime,timedelta
+import socket
+import sys
 
 DB_HOST = 'localhost'
 DB_USER = 'userRoot'
@@ -112,12 +114,20 @@ def exportar(correo):
         writePrivateFile.write('e:' + str(result[0][3]) +'\nn:' + str(result[0][5]) + '\ncorreo:' + str(result[0][2]) + '\nvigencia:' + str(result[0][4]))
     print('Listo!')
 
+def getPrimo():
+    minPrimo = 1000
+    maxPrimo = 9999
+    primos = [i for i in range(minPrimo,maxPrimo) if esPrimo(i)]
+    n = random.choice(primos)
+    return n
+
 def menu():
     print('Que deseas hacer a continuación?')
     print('[Exportar tu llave publica]->Expotar')
+    print('[Conectarse con otro usuario]->Conectar')
     print('[Salir]->Salir')
 
-correo = raw_input("Escribe tu correo>>  ").lower()
+correo = raw_input("Escribe tu correo>>").lower()
 query = "SELECT nombre,expirationDate FROM usuarios WHERE correo='%s'" % correo
 result = run_query(query)
 if len(result) == 0:
@@ -136,5 +146,26 @@ else:
         elif opt == 'exportar':
             print('Exportar llave publica')
             exportar(correo)
+        elif opt == 'conectar':
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.bind(('', 7500))
+            server.listen(1)
+            while True:
+                print >>sys.stderr, 'Esperando para conectarse'
+                client, addr = server.accept()
+                try:
+                    print >>sys.stderr, 'Conexión desde', addr
+                    g = 5
+                    client.sendall(str(g))
+                    p = getPrimo()
+                    client.sendall(str(p))
+                    b = random.randint(p/4, p-1)
+                    kb = pow(g,b,p) #g ^ b % p
+                    client.sendall(str(kb))
+                    ka = int(client.recv(4))
+                    DHKey = pow(ka,b,p)
+                    print DHKey
+                finally:
+                    client.close()
         else:
             print('\nSelecciona una opcion valida')
